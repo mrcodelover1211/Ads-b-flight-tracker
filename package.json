@@ -1,0 +1,5 @@
+{
+  "name":"ads-b-flight-tracker","version":"1.0.0","private":true,"description":"Live ADS-B flight tracker","main":"electron/main.cjs",
+  "scripts":{"start":"electron .","dist":"electron-builder --win nsis portable"},
+  "devDependencies":{"electron":"^38.0.0","electron-builder":"^26.0.0"},
+  "build":{"appId":"com.mrcodelover1211.adsbtracker","productName":"ADS-B Flight Tracker","files":["electron/**/*","index.html","app.js","styles.css"],"directories":{"output":"dist"},"win":{"target":[{"target":"nsis","arch":["x64"]},{"target":"portable","arch":["x64"]}],"artifactName":"ADS-B-Flight-Tracker-${version}-${arch}.${ext}"},"nsis":{"oneClick":false,"perMachine":false,"allowToChangeInstallationDirectory":true,"createDesktopShortcut":true,"createStartMenuShortcut":true}}}
