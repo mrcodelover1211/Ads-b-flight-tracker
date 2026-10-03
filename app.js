@@ -17,7 +17,8 @@ function norm(a){
     vr:a.baro_rate??a.vert_rate,squawk:String(a.squawk||"").trim()};
 }
 function ico(p){const heading=Number.isFinite(Number(p.track))?Number(p.track):0;
-  return L.divIcon({className:"",html:"<div class='planeIcon' style='transform:rotate("+heading+"deg)'>✈</div>",iconSize:[24,24],iconAnchor:[12,12]});
+  const svg="<svg viewBox='0 0 24 24' width='24' height='24' aria-hidden='true'><path d='M12 1 15 9l6 3v2l-6-1v8l3 2v1H6v-1l3-2v-8l-6 1v-2l6-3z'/></svg>";
+  return L.divIcon({className:"planeMarker",html:"<div class='planeIcon' style='transform:rotate("+heading+"deg)'>"+svg+"</div>",iconSize:[24,24],iconAnchor:[12,12]});
 }
 function validQuery(){
   const lat=num($("lat").value,-90,90),lon=num($("lon").value,-180,180),dist=num($("dist").value,1,250);
@@ -65,17 +66,21 @@ async function details(hex){
   const p=S.planes.get(hex);if(!p)return;S.selected=hex;$("details").classList.remove("hidden");
   $("detailContent").innerHTML="<h2>"+esc(p.callsign||"Unknown flight")+"</h2><div class='muted'>"+esc(p.reg)+" · "+esc(p.type||"Unknown type")+" · "+esc(p.hex)+"</div><div id='photoBox'></div><div class='route' id='routeBox'><span>Route</span><strong>Loading…</strong></div><div class='detailGrid'><div class='stat'><small>Altitude</small><b>"+alt(p.alt)+"</b></div><div class='stat'><small>Ground speed</small><b>"+spd(p.gs)+"</b></div><div class='stat'><small>Track</small><b>"+(Number.isFinite(Number(p.track))?Math.round(Number(p.track)):"-")+"°</b></div><div class='stat'><small>Vertical rate</small><b>"+(p.vr??"-")+" fpm</b></div><div class='stat'><small>Squawk</small><b>"+esc(p.squawk||"-")+"</b></div><div class='stat'><small>Position</small><b>"+p.lat.toFixed(4)+", "+p.lon.toFixed(4)+"</b></div></div><p class='muted'>Session track points: "+(S.history.get(hex)||[]).length+"</p>";
   try{
-    const d=desktop?await desktop.aircraft(p.reg||p.hex):await fetch("https://api.adsbdb.com/v0/aircraft/"+encodeURIComponent(p.reg||p.hex)).then(r=>r.ok?r.json():null);
+    const key=encodeURIComponent(p.hex||p.reg);
+    const d=desktop?await desktop.aircraft(p.hex||p.reg):await fetch("https://api.adsbdb.com/v0/aircraft/"+key+"?callsign="+encodeURIComponent(p.callsign||"")).then(r=>r.ok?r.json():null);
     if(S.selected!==hex)return;
     const ac=d?.response?.aircraft;
     if(ac?.url_photo_thumbnail){const src=ac.url_photo||ac.url_photo_thumbnail;$("photoBox").innerHTML="<img class='hero' src='"+esc(src)+"' alt='Aircraft photo' referrerpolicy='no-referrer'><div class='muted'>Photo: Planespotters.net</div>"}
-    if(p.callsign){
-      const r=desktop?await desktop.route(p.callsign):await fetch("https://api.adsbdb.com/v0/callsign/"+encodeURIComponent(p.callsign)).then(x=>x.ok?x.json():null);
-      if(S.selected!==hex)return;const rt=r?.response?.flightroute;
-      if(rt)$("routeBox").innerHTML="<span>"+esc(rt.origin?.iata_code||rt.origin?.icao_code||"?")+"</span><strong>→</strong><span>"+esc(rt.destination?.iata_code||rt.destination?.icao_code||"?")+"</span>";
-      else $("routeBox").innerHTML="<span>Route unavailable</span>";
-    }else $("routeBox").innerHTML="<span>No callsign</span>";
-  }catch{$("routeBox").innerHTML="<span>Metadata unavailable</span>"}
+    if(S.selected!==hex)return;
+    const rt=d?.response?.flightroute;
+    const box=$("routeBox");
+    if(!box)return;
+    if(rt)box.innerHTML="<span>"+esc(rt.origin?.iata_code||rt.origin?.icao_code||"?")+"</span><strong>→</strong><span>"+esc(rt.destination?.iata_code||rt.destination?.icao_code||"?")+"</span>";
+    else box.innerHTML="<span>"+(p.callsign?"Route unavailable":"No callsign")+"</span>";
+  }catch{
+    const box=$("routeBox");
+    if(box)box.innerHTML="<span>Metadata unavailable</span>";
+  }
 }
 async function airports(){
   if(S.loaded)return;
@@ -99,7 +104,7 @@ function replay(){
   S.replay=h.slice();$("replay").classList.remove("hidden");$("replaySlider").max=h.length-1;$("replaySlider").value=0;drawReplay();
 }
 function drawReplay(){const x=S.replay?.[Number($("replaySlider").value)];if(!x)return;map.setView([x.lat,x.lon],map.getZoom());$("replayTime").textContent=new Date(x.t).toLocaleTimeString()+" · "+alt(x.alt);if(S.replayMarker)S.replayMarker.setLatLng([x.lat,x.lon]);else S.replayMarker=L.marker([x.lat,x.lon],{icon:ico({track:0})}).addTo(map)}
-$("refresh").onclick=live;$("search").oninput=list;$("closeDetails").onclick=()=>$("details").classList.add("hidden");$("replayBtn").onclick=replay;$("replaySlider").oninput=drawReplay;
+$("refresh").onclick=live;$("search").oninput=list;$("closeDetails").onclick=()=>{$("details").classList.add("hidden");S.selected=null};$("replayBtn").onclick=replay;$("replaySlider").oninput=drawReplay;
 $("clearReplay").onclick=()=>{$("replay").classList.add("hidden");S.replay=null;if(S.replayMarker){map.removeLayer(S.replayMarker);S.replayMarker=null}};
 $("airportsBtn").onclick=async()=>{$("airportPanel").classList.toggle("hidden");if(!$("airportPanel").classList.contains("hidden")){await airports();$("airportSearch").focus()}};
 $("airportSearch").oninput=airportResults;
