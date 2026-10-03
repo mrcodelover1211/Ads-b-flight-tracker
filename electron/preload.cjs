@@ -1,2 +1,2 @@
 const {contextBridge,ipcRenderer}=require("electron");
-contextBridge.exposeInMainWorld("desktopAPI",{nearby:q=>ipcRenderer.invoke("adsb:nearby",q),route:c=>ipcRenderer.invoke("route:lookup",c),aircraft:i=>ipcRenderer.invoke("aircraft:lookup",i)});
+contextBridge.exposeInMainWorld("desktopAPI",{nearby:q=>ipcRenderer.invoke("adsb:nearby",q),route:c=>ipcRenderer.invoke("route:lookup",c),aircraft:(id,callsign)=>ipcRenderer.invoke("aircraft:lookup",{id,callsign})});
