@@ -1,0 +1,8 @@
+const {app,BrowserWindow,ipcMain}=require("electron");
+const path=require("path"),https=require("https");
+function get(url){return new Promise((resolve,reject)=>{const req=https.get(url,{headers:{"User-Agent":"ADS-B-Flight-Tracker/1.0"}},r=>{let d="";r.on("data",c=>d+=c);r.on("end",()=>{if(r.statusCode>=200&&r.statusCode<300){try{resolve(JSON.parse(d))}catch(e){reject(e)}}else reject(new Error("HTTP "+r.statusCode))})});req.on("error",reject);req.setTimeout(12000,()=>req.destroy(new Error("timeout")))})}
+ipcMain.handle("adsb:nearby",async(_,q)=>{const lat=Number(q.lat),lon=Number(q.lon),dist=Math.max(1,Math.min(250,Number(q.dist)||100));return get("https://api.adsb.lol/v2/lat/"+lat+"/lon/"+lon+"/dist/"+dist)});
+ipcMain.handle("route:lookup",async(_,c)=>{try{return await get("https://api.adsbdb.com/v0/callsign/"+encodeURIComponent(c||""))}catch{return null}});
+ipcMain.handle("aircraft:lookup",async(_,id)=>{try{return await get("https://api.adsbdb.com/v0/aircraft/"+encodeURIComponent(id||""))}catch{return null}});
+function createWindow(){const w=new BrowserWindow({width:1500,height:900,minWidth:1050,minHeight:650,backgroundColor:"#07111d",webPreferences:{preload:path.join(__dirname,"preload.cjs"),contextIsolation:true,nodeIntegration:false,sandbox:true}});w.loadFile(path.join(__dirname,"..","index.html"))}
+app.whenReady().then(createWindow);app.on("window-all-closed",()=>{if(process.platform!=="darwin")app.quit()});
