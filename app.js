@@ -67,7 +67,7 @@ async function details(hex){
   $("detailContent").innerHTML="<h2>"+esc(p.callsign||"Unknown flight")+"</h2><div class='muted'>"+esc(p.reg)+" · "+esc(p.type||"Unknown type")+" · "+esc(p.hex)+"</div><div id='photoBox'></div><div class='route' id='routeBox'><span>Route</span><strong>Loading…</strong></div><div class='detailGrid'><div class='stat'><small>Altitude</small><b>"+alt(p.alt)+"</b></div><div class='stat'><small>Ground speed</small><b>"+spd(p.gs)+"</b></div><div class='stat'><small>Track</small><b>"+(Number.isFinite(Number(p.track))?Math.round(Number(p.track)):"-")+"°</b></div><div class='stat'><small>Vertical rate</small><b>"+(p.vr??"-")+" fpm</b></div><div class='stat'><small>Squawk</small><b>"+esc(p.squawk||"-")+"</b></div><div class='stat'><small>Position</small><b>"+p.lat.toFixed(4)+", "+p.lon.toFixed(4)+"</b></div></div><p class='muted'>Session track points: "+(S.history.get(hex)||[]).length+"</p>";
   try{
     const key=encodeURIComponent(p.hex||p.reg);
-    const d=desktop?await desktop.aircraft(p.hex||p.reg):await fetch("https://api.adsbdb.com/v0/aircraft/"+key+"?callsign="+encodeURIComponent(p.callsign||"")).then(r=>r.ok?r.json():null);
+    const d=desktop?await desktop.aircraft(p.hex||p.reg,p.callsign):await fetch("https://api.adsbdb.com/v0/aircraft/"+key+"?callsign="+encodeURIComponent(p.callsign||"")).then(r=>r.ok?r.json():null);
     if(S.selected!==hex)return;
     const ac=d?.response?.aircraft;
     if(ac?.url_photo_thumbnail){const src=ac.url_photo||ac.url_photo_thumbnail;$("photoBox").innerHTML="<img class='hero' src='"+esc(src)+"' alt='Aircraft photo' referrerpolicy='no-referrer'><div class='muted'>Photo: Planespotters.net</div>"}
